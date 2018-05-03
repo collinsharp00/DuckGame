@@ -17,6 +17,8 @@ public class MyGdxGame extends ApplicationAdapter {
 	private OrthographicCamera camera;
 	private Rectangle duck;
 	private Music duckSong;
+	private double xSpeed;
+	private double ySpeed;
 
 	
 	@Override
@@ -33,6 +35,8 @@ public class MyGdxGame extends ApplicationAdapter {
 		duck.y = 20;
 		duck.width = 64;
 		duck.height = 64;
+
+		//music
 		duckSong = Gdx.audio.newMusic(Gdx.files.internal("ducksong.mp3"));
 		duckSong.setLooping(true);
 		duckSong.play();
@@ -40,7 +44,7 @@ public class MyGdxGame extends ApplicationAdapter {
 
 	@Override
 	public void render () {
-		Gdx.gl.glClearColor(1, 0, 0, 1);
+		Gdx.gl.glClearColor(0, 0, 1, 1);
 		Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT);
 		camera.update();
 		batch.setProjectionMatrix(camera.combined);
