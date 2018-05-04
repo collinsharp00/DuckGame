@@ -9,9 +9,25 @@ import com.badlogic.gdx.graphics.OrthographicCamera;
 import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 
+import javax.swing.*;
 import java.awt.*;
 
 public class GameTest extends ApplicationAdapter {
+    /*
+    TO DO
+
+    - Make the dash timer work better
+    - Make it so dash lasts a couple frames
+    - Make it so you can't move during a dash
+    - Add animations
+    - Make it feel more fluid
+    - Make it so you can't get out of bounds with a dash
+    - Replace the Strings with something else?
+    - Organize subclasses or something
+    - Add hit boxes and collisions
+    - Make dash feel better
+     */
+
     // instance variables
     SpriteBatch batch;                                  // ask john about spritebatch
     Texture ducko;
@@ -24,8 +40,9 @@ public class GameTest extends ApplicationAdapter {
     private double acceleration;
     private String direction;
     private int dashDistance;
-    private String lastDirection;
-    private static final float COOLDOWN_TIME = 1f;
+    private static final float COOLDOWN_TIME = .5f;
+    private static final double SIN_45 = Math.sin(Math.toRadians(45));
+    private static final double COS_45 = Math.cos(Math.toRadians(45));
     private float timer;
     private boolean canDash;
 
@@ -40,12 +57,12 @@ public class GameTest extends ApplicationAdapter {
         // initialize variables
         xSpeed = 0;
         ySpeed = 0;
-        speed = 600;
-        acceleration = .8;
-        dashDistance = 25000;
+        speed = 700;
+        acceleration = .75;
+        dashDistance = 20000;
         direction = "";
         timer = COOLDOWN_TIME;
-        canDash = false;
+        canDash = true;
 
         // sets up duck
         camera.setToOrtho(false, 1920 * 4, 1080 * 4);
@@ -78,48 +95,15 @@ public class GameTest extends ApplicationAdapter {
         batch.draw(ducko, duck.x, duck.y);
         batch.end();
 
-        lastDirection = "";
-
         // movement
-        if(Gdx.input.isKeyPressed(Input.Keys.A)) {
-            xSpeed -= speed;
-            //duck.x -= 600 * Gdx.graphics.getDeltaTime();
-            lastDirection += 'L';
-        }
-        if(Gdx.input.isKeyPressed(Input.Keys.D)) {
-            xSpeed += speed;
-            //duck.x += 600 * Gdx.graphics.getDeltaTime();
-            lastDirection += 'R';
-        }
-        if(Gdx.input.isKeyPressed(Input.Keys.W)) {
-            ySpeed += speed;
-            //duck.y += 600 * Gdx.graphics.getDeltaTime();
-            lastDirection += 'U';
-        }
-        if(Gdx.input.isKeyPressed(Input.Keys.S)) {
-            ySpeed -= speed;
-            //duck.y -= 600 * Gdx.graphics.getDeltaTime();
-            lastDirection += 'D';
-        }
-        if(duck.y + ySpeed * Gdx.graphics.getDeltaTime() < (1080 - 64) * 4 && duck.y + ySpeed * Gdx.graphics.getDeltaTime() > 0) {
-            duck.y += ySpeed * Gdx.graphics.getDeltaTime();
-        }
-        if(duck.x + xSpeed * Gdx.graphics.getDeltaTime() < (1920 - 64) * 4 && duck.x + xSpeed * Gdx.graphics.getDeltaTime() > 0) {
-            duck.x += xSpeed * Gdx.graphics.getDeltaTime();
-        }
-        ySpeed *= acceleration;
-        xSpeed *= acceleration;
-
-        //direction = checkMovement(xSpeed, ySpeed);
-        direction = checkDirection(lastDirection);
-
-        //System.out.println(direction);
+        direction = checkDirection();
+        System.out.println(direction);
+        move(direction);
 
         // dash
         if(Gdx.input.isKeyPressed(Input.Keys.SPACE)) {
             dash();
         }
-
     }
 
     @Override
@@ -143,7 +127,7 @@ public class GameTest extends ApplicationAdapter {
         else if((ySpeed > -250 && ySpeed < 250 ) && xSpeed < 0) {
             myDirection = "L";
         }
-        else if(ySpeed > 0 && xSpeed > 0){
+        else if(ySpeed > 0 && xSpeed > 0) {
             myDirection = "UR";
         }
         else if(ySpeed < 0 && xSpeed > 0) {
@@ -162,23 +146,44 @@ public class GameTest extends ApplicationAdapter {
         return myDirection;
     }
 
-    public String checkDirection(String myLastDirection) {
-        String inputDirection = myLastDirection;
+    public String checkDirection() {
+        String lastDirection = "";
         String finalDirection = "";
 
-        if(!(inputDirection.indexOf('U') != -1 && inputDirection.indexOf('D') != -1)) {
-            if(inputDirection.indexOf('U') != -1) {
+        if(Gdx.input.isKeyPressed(Input.Keys.A)) {
+            //xSpeed -= speed;
+            //duck.x -= 600 * Gdx.graphics.getDeltaTime();
+            lastDirection += 'L';
+        }
+        if(Gdx.input.isKeyPressed(Input.Keys.D)) {
+            //xSpeed += speed;
+            //duck.x += 600 * Gdx.graphics.getDeltaTime();
+            lastDirection += 'R';
+        }
+        if(Gdx.input.isKeyPressed(Input.Keys.W)) {
+            //ySpeed += speed;
+            //duck.y += 600 * Gdx.graphics.getDeltaTime();
+            lastDirection += 'U';
+        }
+        if(Gdx.input.isKeyPressed(Input.Keys.S)) {
+            //ySpeed -= speed;
+            //duck.y -= 600 * Gdx.graphics.getDeltaTime();
+            lastDirection += 'D';
+        }
+
+        if(!(lastDirection.indexOf('U') != -1 && lastDirection.indexOf('D') != -1)) {
+            if(lastDirection.indexOf('U') != -1) {
                 finalDirection += 'U';
             }
-            if(inputDirection.indexOf('D') != -1) {
+            if(lastDirection.indexOf('D') != -1) {
                 finalDirection += 'D';
             }
         }
-        if(!(inputDirection.indexOf('L') != -1 && inputDirection.indexOf('R') != -1)) {
-            if(inputDirection.indexOf('L') != -1) {
+        if(!(lastDirection.indexOf('L') != -1 && lastDirection.indexOf('R') != -1)) {
+            if(lastDirection.indexOf('L') != -1) {
                 finalDirection += 'L';
             }
-            if(inputDirection.indexOf('R') != -1) {
+            if(lastDirection.indexOf('R') != -1) {
                 finalDirection += 'R';
             }
         }
@@ -189,20 +194,20 @@ public class GameTest extends ApplicationAdapter {
     public void dash() {
         if(direction != "" && canDash) {
             if(direction.equals("UR")) {
-                duck.y += dashDistance * Gdx.graphics.getDeltaTime();
-                duck.x += dashDistance * Gdx.graphics.getDeltaTime();
+                duck.y += SIN_45 * dashDistance * Gdx.graphics.getDeltaTime();
+                duck.x += COS_45 * dashDistance * Gdx.graphics.getDeltaTime();
             }
             else if(direction.equals("DR")) {
-                duck.y -= dashDistance * Gdx.graphics.getDeltaTime();
-                duck.x += dashDistance * Gdx.graphics.getDeltaTime();
+                duck.y -= SIN_45 * dashDistance * Gdx.graphics.getDeltaTime();
+                duck.x += COS_45 * dashDistance * Gdx.graphics.getDeltaTime();
             }
             else if(direction.equals("UL")) {
-                duck.y += dashDistance * Gdx.graphics.getDeltaTime();
-                duck.x -= dashDistance * Gdx.graphics.getDeltaTime();
+                duck.y += SIN_45 * dashDistance * Gdx.graphics.getDeltaTime();
+                duck.x -= COS_45 * dashDistance * Gdx.graphics.getDeltaTime();
             }
             else if(direction.equals("DL")) {
-                duck.y -= dashDistance * Gdx.graphics.getDeltaTime();
-                duck.x -= dashDistance * Gdx.graphics.getDeltaTime();
+                duck.y -= SIN_45 * dashDistance * Gdx.graphics.getDeltaTime();
+                duck.x -= COS_45 * dashDistance * Gdx.graphics.getDeltaTime();
             }
             else if(direction.equals("U")) {
                 duck.y += dashDistance * Gdx.graphics.getDeltaTime();
@@ -218,6 +223,46 @@ public class GameTest extends ApplicationAdapter {
             }
             canDash = false;
         }
+    }
+
+    public void move(String myDirection) {
+        if(myDirection.equals("UR")) {
+            ySpeed += SIN_45 * speed;
+            xSpeed += COS_45 * speed;
+        }
+        else if(myDirection.equals("DR")) {
+            ySpeed -= SIN_45 * speed;
+            xSpeed += COS_45 * speed;
+        }
+        else if(myDirection.equals("UL")) {
+            ySpeed += SIN_45 * speed;
+            xSpeed -= COS_45 * speed;
+        }
+        else if(myDirection.equals("DL")) {
+            ySpeed -= SIN_45 * speed;
+            xSpeed -= COS_45 * speed;
+        }
+        else if(myDirection.equals("U")) {
+            ySpeed += speed;
+        }
+        else if(myDirection.equals("D")) {
+            ySpeed -= speed;
+        }
+        else if(myDirection.equals("R")) {
+            xSpeed += speed;
+        }
+        else if(myDirection.equals("L")) {
+            xSpeed -= speed;
+        }
+
+        if(duck.y + ySpeed * Gdx.graphics.getDeltaTime() < (1080 - 64) * 4 && duck.y + ySpeed * Gdx.graphics.getDeltaTime() > 0) {
+            duck.y += ySpeed * Gdx.graphics.getDeltaTime();
+        }
+        if(duck.x + xSpeed * Gdx.graphics.getDeltaTime() < (1920 - 64) * 4 && duck.x + xSpeed * Gdx.graphics.getDeltaTime() > 0) {
+            duck.x += xSpeed * Gdx.graphics.getDeltaTime();
+        }
+        ySpeed *= acceleration;
+        xSpeed *= acceleration;
     }
 }
 
