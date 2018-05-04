@@ -25,6 +25,9 @@ public class GameTest extends ApplicationAdapter {
     private String direction;
     private int dashDistance;
     private String lastDirection;
+    private static final float COOLDOWN_TIME = 1f;
+    private float timer;
+    private boolean canDash;
 
 
     @Override
@@ -39,8 +42,10 @@ public class GameTest extends ApplicationAdapter {
         ySpeed = 0;
         speed = 600;
         acceleration = .8;
-        dashDistance = 2000;
-        direction = null;
+        dashDistance = 25000;
+        direction = "";
+        timer = COOLDOWN_TIME;
+        canDash = false;
 
         // sets up duck
         camera.setToOrtho(false, 1920 * 4, 1080 * 4);
@@ -57,6 +62,13 @@ public class GameTest extends ApplicationAdapter {
 
     @Override
     public void render () {
+        timer -= Gdx.graphics.getDeltaTime();
+
+        if(timer <= 0) {
+            timer = COOLDOWN_TIME;
+            canDash = true;
+        }
+
         // whatever this means i think it renders stuff
         Gdx.gl.glClearColor(0, 0, 1, 1);
         Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT);
@@ -66,7 +78,7 @@ public class GameTest extends ApplicationAdapter {
         batch.draw(ducko, duck.x, duck.y);
         batch.end();
 
-        lastDirection = null;
+        lastDirection = "";
 
         // movement
         if(Gdx.input.isKeyPressed(Input.Keys.A)) {
@@ -98,40 +110,14 @@ public class GameTest extends ApplicationAdapter {
         ySpeed *= acceleration;
         xSpeed *= acceleration;
 
-        direction = checkMovement(xSpeed, ySpeed);
+        //direction = checkMovement(xSpeed, ySpeed);
+        direction = checkDirection(lastDirection);
+
+        //System.out.println(direction);
 
         // dash
         if(Gdx.input.isKeyPressed(Input.Keys.SPACE)) {
-            if(direction != null) {
-                if(direction == "UR") {
-                    duck.y += dashDistance * Gdx.graphics.getDeltaTime();
-                    duck.x += dashDistance * Gdx.graphics.getDeltaTime();
-                }
-                else if(direction == "DR") {
-                    duck.y -= dashDistance * Gdx.graphics.getDeltaTime();
-                    duck.x += dashDistance * Gdx.graphics.getDeltaTime();
-                }
-                else if(direction == "UL") {
-                    duck.y += dashDistance * Gdx.graphics.getDeltaTime();
-                    duck.x -= dashDistance * Gdx.graphics.getDeltaTime();
-                }
-                else if(direction == "DL") {
-                    duck.y -= dashDistance * Gdx.graphics.getDeltaTime();
-                    duck.x -= dashDistance * Gdx.graphics.getDeltaTime();
-                }
-                else if(direction == "U") {
-                    duck.y += dashDistance * Gdx.graphics.getDeltaTime();
-                }
-                else if(direction == "D") {
-                    duck.y -= dashDistance * Gdx.graphics.getDeltaTime();
-                }
-                else if(direction == "R") {
-                    duck.x += dashDistance * Gdx.graphics.getDeltaTime();
-                }
-                else if(direction == "L") {
-                    duck.x -= dashDistance * Gdx.graphics.getDeltaTime();
-                }
-            }
+            dash();
         }
 
     }
@@ -170,17 +156,68 @@ public class GameTest extends ApplicationAdapter {
             myDirection = "DL";
         }
         else {
-            myDirection = null;
+            myDirection = "";
         }
 
         return myDirection;
     }
 
-    public String checkDirection(lastDirection) {
-        String inputDirection = lastDirection;
+    public String checkDirection(String myLastDirection) {
+        String inputDirection = myLastDirection;
         String finalDirection = "";
 
-        
+        if(!(inputDirection.indexOf('U') != -1 && inputDirection.indexOf('D') != -1)) {
+            if(inputDirection.indexOf('U') != -1) {
+                finalDirection += 'U';
+            }
+            if(inputDirection.indexOf('D') != -1) {
+                finalDirection += 'D';
+            }
+        }
+        if(!(inputDirection.indexOf('L') != -1 && inputDirection.indexOf('R') != -1)) {
+            if(inputDirection.indexOf('L') != -1) {
+                finalDirection += 'L';
+            }
+            if(inputDirection.indexOf('R') != -1) {
+                finalDirection += 'R';
+            }
+        }
+
+        return finalDirection;
+    }
+
+    public void dash() {
+        if(direction != "" && canDash) {
+            if(direction.equals("UR")) {
+                duck.y += dashDistance * Gdx.graphics.getDeltaTime();
+                duck.x += dashDistance * Gdx.graphics.getDeltaTime();
+            }
+            else if(direction.equals("DR")) {
+                duck.y -= dashDistance * Gdx.graphics.getDeltaTime();
+                duck.x += dashDistance * Gdx.graphics.getDeltaTime();
+            }
+            else if(direction.equals("UL")) {
+                duck.y += dashDistance * Gdx.graphics.getDeltaTime();
+                duck.x -= dashDistance * Gdx.graphics.getDeltaTime();
+            }
+            else if(direction.equals("DL")) {
+                duck.y -= dashDistance * Gdx.graphics.getDeltaTime();
+                duck.x -= dashDistance * Gdx.graphics.getDeltaTime();
+            }
+            else if(direction.equals("U")) {
+                duck.y += dashDistance * Gdx.graphics.getDeltaTime();
+            }
+            else if(direction.equals("D")) {
+                duck.y -= dashDistance * Gdx.graphics.getDeltaTime();
+            }
+            else if(direction.equals("R")) {
+                duck.x += dashDistance * Gdx.graphics.getDeltaTime();
+            }
+            else if(direction.equals("L")) {
+                duck.x -= dashDistance * Gdx.graphics.getDeltaTime();
+            }
+            canDash = false;
+        }
     }
 }
 
